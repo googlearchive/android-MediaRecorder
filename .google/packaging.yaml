@@ -9,4 +9,11 @@ categories:   [Media]
 languages:    [Java]
 solutions:    [Mobile]
 github:       android-MediaRecorder
+level:        ADVANCED
+icon:         screenshots/big_icon.png
+apiRefs:
+    - android:android.hardware.Camera
+    - android:android.media.CamcorderProfile
+    - android:android.media.MediaRecorder
+    - android:android.view.TextureView
 license: apache2
