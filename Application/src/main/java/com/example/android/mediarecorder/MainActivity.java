@@ -25,13 +25,13 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 
 import com.example.android.common.media.CameraHelper;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -45,6 +45,7 @@ public class MainActivity extends Activity {
     private Camera mCamera;
     private TextureView mPreview;
     private MediaRecorder mMediaRecorder;
+    private File mOutputFile;
 
     private boolean isRecording = false;
     private static final String TAG = "Recorder";
@@ -71,7 +72,15 @@ public class MainActivity extends Activity {
             // BEGIN_INCLUDE(stop_release_media_recorder)
 
             // stop recording and release camera
-            mMediaRecorder.stop();  // stop the recording
+            try {
+                mMediaRecorder.stop();  // stop the recording
+            } catch (RuntimeException e) {
+                // RuntimeException is thrown when stop() is called immediately after start().
+                // In this case the output file is not properly constructed ans should be deleted.
+                Log.d(TAG, "RuntimeException: stop() is called immediately after start()");
+                //noinspection ResultOfMethodCallIgnored
+                mOutputFile.delete();
+            }
             releaseMediaRecorder(); // release the MediaRecorder object
             mCamera.lock();         // take camera access back from MediaRecorder
 
@@ -137,8 +146,9 @@ public class MainActivity extends Activity {
         // dimensions of our preview surface.
         Camera.Parameters parameters = mCamera.getParameters();
         List<Camera.Size> mSupportedPreviewSizes = parameters.getSupportedPreviewSizes();
-        Camera.Size optimalSize = CameraHelper.getOptimalPreviewSize(mSupportedPreviewSizes,
-                mPreview.getWidth(), mPreview.getHeight());
+        List<Camera.Size> mSupportedVideoSizes = parameters.getSupportedVideoSizes();
+        Camera.Size optimalSize = CameraHelper.getOptimalVideoSize(mSupportedVideoSizes,
+                mSupportedPreviewSizes, mPreview.getWidth(), mPreview.getHeight());
 
         // Use the same size for recording profile.
         CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH);
@@ -174,8 +184,11 @@ public class MainActivity extends Activity {
         mMediaRecorder.setProfile(profile);
 
         // Step 4: Set output file
-        mMediaRecorder.setOutputFile(CameraHelper.getOutputMediaFile(
-                CameraHelper.MEDIA_TYPE_VIDEO).toString());
+        mOutputFile = CameraHelper.getOutputMediaFile(CameraHelper.MEDIA_TYPE_VIDEO);
+        if (mOutputFile == null) {
+            return false;
+        }
+        mMediaRecorder.setOutputFile(mOutputFile.getPath());
         // END_INCLUDE (configure_media_recorder)
 
         // Step 5: Prepare configured MediaRecorder
