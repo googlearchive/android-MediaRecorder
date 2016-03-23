@@ -14,7 +14,7 @@ It uses the [Camera][2] as input source and displays a preview on a [TextureView
 The sample features a button to capture the input and stop capturing afterwards.
 
 It demonstrates how to correctly gain control and release the camera.
-The sample also shows how to save the captured audio and video to persistant storage
+The sample also shows how to save the captured audio and video to persistent storage
 and basic error handling.
 
 
