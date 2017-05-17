@@ -24,6 +24,7 @@ import android.view.Surface;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
+import java.util.Locale;
 import java.util.Queue;
 
 /**
@@ -74,17 +75,14 @@ public class MediaCodecWrapper {
     // is valid if and only if its index is currently contained in mAvailableOutputBuffers.
     private MediaCodec.BufferInfo[] mOutputBufferInfo;
 
-    // An (optional) stream that will receive decoded data.
-    private OutputSampleListener mOutputSampleListener;
-
     private MediaCodecWrapper(MediaCodec codec) {
         mDecoder = codec;
         codec.start();
         mInputBuffers = codec.getInputBuffers();
         mOutputBuffers = codec.getOutputBuffers();
         mOutputBufferInfo = new MediaCodec.BufferInfo[mOutputBuffers.length];
-        mAvailableInputBuffers = new ArrayDeque<Integer>(mOutputBuffers.length);
-        mAvailableOutputBuffers = new ArrayDeque<Integer>(mInputBuffers.length);
+        mAvailableInputBuffers = new ArrayDeque<>(mOutputBuffers.length);
+        mAvailableOutputBuffers = new ArrayDeque<>(mInputBuffers.length);
     }
 
     /**
@@ -115,10 +113,9 @@ public class MediaCodecWrapper {
 
         // Making sure we don't block ourselves due to a bad implementation of the callback by
         // using a handler provided by client.
-        Looper looper;
         mHandler = handler;
         if (outputFormatChangedListener != null && mHandler == null) {
-            if ((looper = Looper.myLooper()) != null) {
+            if (Looper.myLooper() != null) {
                 mHandler = new Handler();
             } else {
                 throw new IllegalArgumentException(
@@ -197,7 +194,7 @@ public class MediaCodecWrapper {
 
             // we can't write our sample to a lesser capacity input buffer.
             if (size > buffer.capacity()) {
-                throw new MediaCodecWrapper.WriteException(String.format(
+                throw new MediaCodecWrapper.WriteException(String.format(Locale.US,
                         "Insufficient capacity in MediaCodec buffer: "
                             + "tried to write %d, buffer capacity is %d.",
                         input.remaining(),
@@ -219,7 +216,7 @@ public class MediaCodecWrapper {
         return result;
     }
 
-    static MediaCodec.CryptoInfo cryptoInfo= new MediaCodec.CryptoInfo();
+    private static MediaCodec.CryptoInfo sCryptoInfo = new MediaCodec.CryptoInfo();
 
     /**
      * Write a media sample to the decoder.
@@ -244,7 +241,6 @@ public class MediaCodecWrapper {
             final long presentationTimeUs,
             int flags) {
         boolean result = false;
-        boolean isEos = false;
 
         if (!mAvailableInputBuffers.isEmpty()) {
             int index = mAvailableInputBuffers.remove();
@@ -261,8 +257,8 @@ public class MediaCodecWrapper {
             if (!isSecure) {
                 mDecoder.queueInputBuffer(index, 0, size, presentationTimeUs, flags);
             } else {
-                extractor.getSampleCryptoInfo(cryptoInfo);
-                mDecoder.queueSecureInputBuffer(index, 0, cryptoInfo, presentationTimeUs, flags);
+                extractor.getSampleCryptoInfo(sCryptoInfo);
+                mDecoder.queueSecureInputBuffer(index, 0, sCryptoInfo, presentationTimeUs, flags);
             }
 
             result = true;
@@ -310,12 +306,6 @@ public class MediaCodecWrapper {
         update();
         if (!mAvailableOutputBuffers.isEmpty()) {
             int index = mAvailableOutputBuffers.remove();
-
-            if (render && mOutputSampleListener != null) {
-                ByteBuffer buffer = mOutputBuffers[index];
-                MediaCodec.BufferInfo info = mOutputBufferInfo[index];
-                mOutputSampleListener.outputSample(this, info, buffer);
-            }
 
             // releases the buffer back to the codec
             mDecoder.releaseOutputBuffer(index, render);
@@ -365,7 +355,7 @@ public class MediaCodecWrapper {
                     // handled INFO_TRY_AGAIN_LATER, INFO_OUTPUT_FORMAT_CHANGED &
                     // INFO_OUTPUT_BUFFERS_CHANGED i.e all the other possible return codes but
                     // asserting index value anyways for future-proofing the code.
-                    if(index >= 0) {
+                    if (index >= 0) {
                         mOutputBufferInfo[index] = info;
                         mAvailableOutputBuffers.add(index);
                     } else {

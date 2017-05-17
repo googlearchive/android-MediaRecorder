@@ -136,7 +136,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     private boolean prepareVideoRecorder(){
 
         // BEGIN_INCLUDE (configure_preview)
