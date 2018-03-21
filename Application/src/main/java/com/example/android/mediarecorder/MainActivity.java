@@ -16,16 +16,17 @@
 
 package com.example.android.mediarecorder;
 
-import android.annotation.TargetApi;
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
+import android.support.v13.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
-import android.view.Menu;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
@@ -37,9 +38,9 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- *  This activity uses the camera/camcorder as the A/V source for the {@link android.media.MediaRecorder} API.
- *  A {@link android.view.TextureView} is used as the camera preview which limits the code to API 14+. This
- *  can be easily replaced with a {@link android.view.SurfaceView} to run on older devices.
+ * This activity uses the camera/camcorder as the A/V source for the {@link android.media.MediaRecorder} API.
+ * A {@link android.view.TextureView} is used as the camera preview which limits the code to API 14+. This
+ * can be easily replaced with a {@link android.view.SurfaceView} to run on older devices.
  */
 public class MainActivity extends Activity {
 
@@ -59,6 +60,37 @@ public class MainActivity extends Activity {
 
         mPreview = (TextureView) findViewById(R.id.surface_view);
         captureButton = (Button) findViewById(R.id.button_capture);
+
+        requestPermissions();
+    }
+
+    /**
+     * Request Permission for Android version >= 7
+     */
+    public void requestPermissions(){
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 0);
+        } else if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 0);
+        } else if(ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
+        }
+    }
+
+    /**
+     *
+     * This handle when there is a result of permission request
+     *
+     * @param requestCode
+     * @param permissions
+     * @param grantResults
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        requestPermissions();
     }
 
     /**
@@ -115,7 +147,7 @@ public class MainActivity extends Activity {
         releaseCamera();
     }
 
-    private void releaseMediaRecorder(){
+    private void releaseMediaRecorder() {
         if (mMediaRecorder != null) {
             // clear recorder configuration
             mMediaRecorder.reset();
@@ -128,15 +160,15 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void releaseCamera(){
-        if (mCamera != null){
+    private void releaseCamera() {
+        if (mCamera != null) {
             // release the camera for other applications
             mCamera.release();
             mCamera = null;
         }
     }
 
-    private boolean prepareVideoRecorder(){
+    private boolean prepareVideoRecorder() {
 
         // BEGIN_INCLUDE (configure_preview)
         mCamera = CameraHelper.getDefaultCameraInstance();
@@ -159,9 +191,9 @@ public class MainActivity extends Activity {
         parameters.setPreviewSize(profile.videoFrameWidth, profile.videoFrameHeight);
         mCamera.setParameters(parameters);
         try {
-                // Requires API level 11+, For backward compatibility use {@link setPreviewDisplay}
-                // with {@link SurfaceView}
-                mCamera.setPreviewTexture(mPreview.getSurfaceTexture());
+            // Requires API level 11+, For backward compatibility use {@link setPreviewDisplay}
+            // with {@link SurfaceView}
+            mCamera.setPreviewTexture(mPreview.getSurfaceTexture());
         } catch (IOException e) {
             Log.e(TAG, "Surface texture is unavailable or unsuitable" + e.getMessage());
             return false;
@@ -177,7 +209,7 @@ public class MainActivity extends Activity {
         mMediaRecorder.setCamera(mCamera);
 
         // Step 2: Set sources
-        mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT );
+        mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 
         // Step 3: Set a CamcorderProfile (requires API Level 8 or higher)
