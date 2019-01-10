@@ -255,7 +255,10 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
 
         boolean areAllPermissionsGranted = true;
         for (int result : grantResults){
-            if (result != PackageManager.PERMISSION_GRANTED) areAllPermissionsGranted = false;
+            if (result != PackageManager.PERMISSION_GRANTED){
+                areAllPermissionsGranted = false;
+                break;
+            }
         }
 
         if (areAllPermissionsGranted){
