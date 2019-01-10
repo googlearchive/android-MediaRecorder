@@ -32,7 +32,8 @@ Pre-requisites
 Screenshots
 -------------
 
-<img src="https://raw.githubusercontent.com/googlesamples/android-MediaRecorder/master/screenshots/screnshot1.png" height="400" alt="Screenshot"/> <img src="https://raw.githubusercontent.com/googlesamples/android-MediaRecorder/master/screenshots/screnshot2.png" height="400" alt="Screenshot"/> 
+![Screenshot 1](screenshots/screenshot1.png "Screenshot 1")
+![Screenshot 2](screenshots/screenshot2.png "Screenshot 2")
 
 Getting Started
 ---------------
