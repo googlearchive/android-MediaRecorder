@@ -18,5 +18,7 @@
 <resources>
 
     <string name="btnCapture">capture</string>
+    <string name="need_camera_permissions">This app needs the WRITE_EXTERNAL_STORAGE, RECORD_AUDIO
+        and CAMERA permissions to capture video from the camera.</string>
 
 </resources>

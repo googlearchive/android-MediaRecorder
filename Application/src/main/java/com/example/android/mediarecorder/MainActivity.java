@@ -16,19 +16,21 @@
 
 package com.example.android.mediarecorder;
 
-import android.annotation.TargetApi;
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
-import android.view.Menu;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.example.android.common.media.CameraHelper;
 
@@ -41,7 +43,9 @@ import java.util.List;
  *  A {@link android.view.TextureView} is used as the camera preview which limits the code to API 14+. This
  *  can be easily replaced with a {@link android.view.SurfaceView} to run on older devices.
  */
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements ActivityCompat.OnRequestPermissionsResultCallback {
+
+    private static final int MEDIA_RECORDER_REQUEST = 0;
 
     private Camera mCamera;
     private TextureView mPreview;
@@ -51,6 +55,12 @@ public class MainActivity extends Activity {
     private boolean isRecording = false;
     private static final String TAG = "Recorder";
     private Button captureButton;
+
+    private final String[] requiredPermissions = {
+        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        Manifest.permission.RECORD_AUDIO,
+        Manifest.permission.CAMERA,
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +79,16 @@ public class MainActivity extends Activity {
      * @param view the view generating the event.
      */
     public void onCaptureClick(View view) {
+
+        if (areCameraPermissionGranted()){
+            startCapture();
+        } else {
+            requestCameraPermissions();
+        }
+    }
+
+    private void startCapture(){
+
         if (isRecording) {
             // BEGIN_INCLUDE(stop_release_media_recorder)
 
@@ -204,6 +224,50 @@ public class MainActivity extends Activity {
             return false;
         }
         return true;
+    }
+
+    private boolean areCameraPermissionGranted() {
+
+        for (String permission : requiredPermissions){
+            if (!(ActivityCompat.checkSelfPermission(this, permission) ==
+                    PackageManager.PERMISSION_GRANTED)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void requestCameraPermissions(){
+        ActivityCompat.requestPermissions(
+                this,
+                requiredPermissions,
+                MEDIA_RECORDER_REQUEST);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+
+        if (MEDIA_RECORDER_REQUEST != requestCode) {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            return;
+        }
+
+        boolean areAllPermissionsGranted = true;
+        for (int result : grantResults){
+            if (result != PackageManager.PERMISSION_GRANTED) areAllPermissionsGranted = false;
+        }
+
+        if (areAllPermissionsGranted){
+            startCapture();
+        } else {
+            // User denied one or more of the permissions, without these we cannot record
+            // Show a toast to inform the user.
+            Toast.makeText(getApplicationContext(),
+                    getString(R.string.need_camera_permissions),
+                    Toast.LENGTH_SHORT)
+                    .show();
+        }
     }
 
     /**
